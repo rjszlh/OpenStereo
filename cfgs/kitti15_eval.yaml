@@ -2,8 +2,8 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: KittiDataset
             DATA_SPLIT: {
-                EVALUATING: ./data/KITTI15//kitti15_train200.txt,
-                TESTING: ./data/KITTI15//kitti15_test.txt
+                EVALUATING: ./data/KITTI15/kitti15_train200.txt,
+                TESTING: ./data/KITTI15/kitti15_test.txt
             }
             DATA_PATH: /home/hello/datasets/kitti15
             RETURN_RIGHT_DISP: false

@@ -5,7 +5,7 @@ DATA_CONFIG:
                 EVALUATING: ./data/KITTI12/kitti12_train194.txt,
                 TESTING: ./data/KITTI12/kitti12_test.txt
             }
-            DATA_PATH: /yourpath/KITTI/kitti2012
+            DATA_PATH: /home/hello/datasets/kitti12
             RETURN_RIGHT_DISP: false
 
     DATA_TRANSFORM:
