@@ -29,7 +29,7 @@ MODEL:
     LEFT_ATT: true
     FIND_UNUSED_PARAMETERS: false
     CKPT: -1
-    PRETRAINED_MODEL: ''
+    PRETRAINED_MODEL: '/home/hello/OpenStereo/trained/LightStereo-S-SceneFlow.ckpt'
 
 OPTIMIZATION:
     FREEZE_BN: false
