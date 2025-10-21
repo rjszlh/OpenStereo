@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     auto preprocess_result = transform(sample);
 
     auto end_preprocess = std::chrono::high_resolution_clock::now();
-    auto duration_preprocess = std::chrono::duration_cast<std::chrono::milliseconds>(end_preprocess - start_preprocess);
+    std::chrono::duration<double, std::milli> duration_preprocess = end_preprocess - start_preprocess;
 
     // Try run and warm up engine
     try {
@@ -133,9 +133,10 @@ int main(int argc, char* argv[]) {
     std::unordered_map<std::string, cv::Mat> output = engine.run(preprocess_result);
 
     auto end_inference = std::chrono::high_resolution_clock::now();
-    auto duration_inference = std::chrono::duration_cast<std::chrono::milliseconds>(end_inference - start_inference);
+    std::chrono::duration<double, std::milli> duration_inference = end_inference - start_inference;
 
     std::cout << "==================== TimeInfo ====================" << std::endl
+              <<  std::fixed << std::setprecision(4)
               << "preprocess: " << duration_preprocess.count() << " ms" << std::endl
               << "inference : " << duration_inference.count() << " ms" << std::endl;
 

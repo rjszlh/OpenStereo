@@ -18,7 +18,17 @@ from .unrealstereo4k_dataset import UnrealStereo4KDataset
 from .crestereo_dataset import CREStereoDataset
 from .argoverse_dataset import ArgoverseDataset
 from .spring import SpringDataset
+from .tartanair_dataset import TartanAirDataset
+from .vkitti2_dataset import VirtualKitti2Dataset
+from .carla_dataset import CarlaDataset
+from .foundationstereo import FoundationStereoDataset
+from .dynamic_replica import DynamicReplicaDataset
+from .mono_dataset import MonoDataset
+from .realfill_dataset import RealfillDataset
+
 __all__ = {
+    'RealfillDataset': RealfillDataset,
+    'MonoDataset': MonoDataset,
     'SceneFlowDataset': SceneFlowDataset,
     'KittiDataset': KittiDataset,
     'DrivingDataset': DrivingDataset,
@@ -31,7 +41,12 @@ __all__ = {
     'UnrealStereo4KDataset': UnrealStereo4KDataset,
     'CREStereoDataset': CREStereoDataset,
     'ArgoverseDataset': ArgoverseDataset,
-    'SpringDataset': SpringDataset
+    'SpringDataset': SpringDataset,
+    'TartanAirDataset': TartanAirDataset,
+    'VirtualKitti2Dataset': VirtualKitti2Dataset,
+    'FoundationStereoDataset': FoundationStereoDataset,
+    'DynamicReplicaDataset': DynamicReplicaDataset,
+    'CarlaDataset': CarlaDataset
 }
 
 

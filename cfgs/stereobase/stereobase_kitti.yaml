@@ -6,7 +6,6 @@ DATA_CONFIG:
                 EVALUATING: '',
                 TESTING: ''
             }
-            DATA_PATH: /yourpath/kitti12
             RETURN_RIGHT_DISP: false
 
         -   DATASET: KittiDataset
@@ -15,7 +14,6 @@ DATA_CONFIG:
                 EVALUATING: ./data/KITTI15//kitti15_val20.txt,
                 TESTING: ./data/KITTI15//kitti15_test.txt
             }
-            DATA_PATH: /yourpath/kitti15
             RETURN_RIGHT_DISP: false
 
     DATA_TRANSFORM:

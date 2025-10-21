@@ -64,6 +64,11 @@ cmake .. && make
 cmake -DTENSORRT_ROOT=<path_to_tensorrt> .. && make
 ```
 
+指定你的cuda architecture
+```bash
+cmake -DTENSORRT_ROOT=<path_to_tensorrt> -DCMAKE_CUDA_ARCHITECTURES=<your_cuda_architecture> .. && make
+```
+
 然后，可以使用以下命令进行推理：
 
 ```bash

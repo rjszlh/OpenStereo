@@ -60,6 +60,9 @@ InferenceEngine::InferenceEngine(const std::string& engine_file) {
 
 InferenceEngine::~InferenceEngine() {
     cudaStreamDestroy(stream_);
+    // release the CUDA Graph
+    cudaGraphDestroy(graph_);
+    cudaGraphExecDestroy(instance_);
 
     // Destroy the engine
     delete context_;
@@ -128,9 +131,9 @@ void InferenceEngine::allocateBuffers() {
     buffers_.resize(engine_->getNbIOTensors());
 
     for (int i = 0; i < engine_->getNbIOTensors(); ++i) {
-        auto dims = engine_->getTensorShape(engine_->getIOTensorName(i));
-        auto type = engine_->getTensorDataType(engine_->getIOTensorName(i));
-        size_t size = volume(dims) * getElementSize(type);
+        dims = engine_->getTensorShape(engine_->getIOTensorName(i));
+        dtype = engine_->getTensorDataType(engine_->getIOTensorName(i));
+        size_t size = volume(dims) * getElementSize(dtype);
 
         cudaMalloc(&buffers_[i], size);
     }
@@ -157,9 +160,9 @@ void InferenceEngine::preprocess(const PreprocessType& sample) {
             float* d_ptr = item.second;
 
             if (key == "left_img") {
-                cudaMemcpyAsync(buffers_[0], d_ptr, 3 * 384 * 1248 * sizeof(float), cudaMemcpyDeviceToDevice, stream_);
+                cudaMemcpyAsync(buffers_[0], d_ptr, volume(dims) * getElementSize(dtype), cudaMemcpyDeviceToDevice, stream_);
             } else if (key == "right_img") {
-                cudaMemcpyAsync(buffers_[1], d_ptr, 3 * 384 * 1248 * sizeof(float), cudaMemcpyDeviceToDevice, stream_);
+                cudaMemcpyAsync(buffers_[1], d_ptr, volume(dims) * getElementSize(dtype), cudaMemcpyDeviceToDevice, stream_);
             }
         }
     }
@@ -198,9 +201,19 @@ std::unordered_map<std::string, cv::Mat> InferenceEngine::run(const PreprocessTy
     preprocess(sample);
 
     // Enqueue the inference
-    if (!context_->enqueueV3(stream_)) {
-        throw std::runtime_error("Failed to enqueue inference");
+    if (instance_ == nullptr) {
+        // capture the CUDA Graph
+        cudaStreamBeginCapture(stream_, cudaStreamCaptureModeGlobal);
+        if (!context_->enqueueV3(stream_)) {
+            throw std::runtime_error("Failed to enqueue inference");
+        }
+        cudaStreamEndCapture(stream_, &graph_);
+
+        cudaGraphInstantiate(&instance_, graph_, nullptr, nullptr, 0);
     }
+
+    // launch the CUDA Graph
+    cudaGraphLaunch(instance_, stream_);
 
     return postprocess();
 }

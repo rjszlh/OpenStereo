@@ -4,7 +4,6 @@ DATA_CONFIG:
             DATA_SPLIT: {
                 EVALUATING: ./data/ETH3D/ETH3D_train.txt,
             }
-            DATA_PATH: /yourpath/eth3d
             RETURN_RIGHT_DISP: false
 
     DATA_TRANSFORM:
@@ -12,6 +11,7 @@ DATA_CONFIG:
             - { NAME: DivisiblePad, BY: 32, MODE: round }
             - { NAME: TransposeImage }
             - { NAME: ToTensor }
+            - { NAME: NormalizeImage, MEAN: [ 0.5, 0.5, 0.5 ], STD: [ 0.5, 0.5, 0.5 ] }
 
 EVALUATOR:
     BATCH_SIZE_PER_GPU: 1

@@ -14,6 +14,10 @@ from stereo.utils import common_utils
 from stereo.modeling import build_trainer
 from cfgs.data_basic import DATA_PATH_DICT
 
+import warnings
+# 同时忽略 FutureWarning 和 UserWarning （包括PyTorch产生的）
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
@@ -47,6 +51,7 @@ def parse_config():
         if dataset_name == 'KittiDataset':
             dataset_name = 'KittiDataset15' if 'kitti15' in each.DATA_SPLIT.EVALUATING else 'KittiDataset12'
         each.DATA_PATH = DATA_PATH_DICT[dataset_name]
+        assert os.path.exists(each.DATA_PATH), '[Errno 2] No such file or directory: {}, You must modify the data root path in cfgs/databasic.py to the path of your own dataset.'.format(each.DATA_PATH)
 
     args.run_mode = 'eval'
     return args, cfgs

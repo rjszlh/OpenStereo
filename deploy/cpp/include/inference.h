@@ -38,8 +38,13 @@ private:
     nvinfer1::IRuntime* runtime_;
     nvinfer1::ICudaEngine* engine_;
     nvinfer1::IExecutionContext* context_;
+    // employed cudaGraph for better performance
+    cudaGraph_t graph_ = nullptr;
+    cudaGraphExec_t instance_ = nullptr;
 
     // void* buffers_[2];
+    nvinfer1::Dims dims;
+    nvinfer1::DataType dtype;
     std::vector<void*> buffers_;
     cudaStream_t stream_;
     std::vector<char> engine_data_;

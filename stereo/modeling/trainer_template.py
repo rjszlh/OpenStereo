@@ -3,6 +3,7 @@
 import os
 import time
 import glob
+import math
 import torch
 import torch.nn as nn
 import torch.distributed as dist
@@ -34,7 +35,13 @@ class TrainerTemplate:
         if self.args.run_mode == 'train':
             self.train_set, self.train_loader, self.train_sampler = self.build_train_loader()
 
-            self.total_epochs = cfgs.OPTIMIZATION.NUM_EPOCHS
+            if 'MAX_ITER' in cfgs.OPTIMIZATION and cfgs.OPTIMIZATION.MAX_ITER > 0:
+                self.max_iter = cfgs.OPTIMIZATION.MAX_ITER
+                self.total_epochs = math.ceil(cfgs.OPTIMIZATION.MAX_ITER / len(self.train_loader))
+            else:
+                self.total_epochs = cfgs.OPTIMIZATION.NUM_EPOCHS
+                self.max_iter = self.total_epochs * len(self.train_loader)
+
             self.last_epoch = -1
 
             self.optimizer, self.scheduler = self.build_optimizer_and_scheduler()
@@ -101,7 +108,7 @@ class TrainerTemplate:
         valid_arg = common_utils.get_valid_args(optimizer_cls, self.cfgs.OPTIMIZATION.OPTIMIZER, ['name'])
         optimizer = optimizer_cls(params=[p for p in self.model.parameters() if p.requires_grad], **valid_arg)
 
-        self.cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS = self.total_epochs * len(self.train_loader)
+        self.cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS = self.max_iter
         scheduler_cls = getattr(torch.optim.lr_scheduler, self.cfgs.OPTIMIZATION.SCHEDULER.NAME)
         valid_arg = common_utils.get_valid_args(scheduler_cls, self.cfgs.OPTIMIZATION.SCHEDULER, ['name', 'on_epoch'])
         scheduler = scheduler_cls(optimizer, **valid_arg)
@@ -187,6 +194,10 @@ class TrainerTemplate:
 
         train_loader_iter = iter(self.train_loader)
         for i in range(0, len(self.train_loader)):
+            total_iter = current_epoch * len(self.train_loader) + i
+            if total_iter >= self.max_iter:
+                break
+
             self.optimizer.zero_grad()
             lr = self.optimizer.param_groups[0]['lr']
 
@@ -220,7 +231,7 @@ class TrainerTemplate:
                     self.scheduler.step()
 
             total_loss += loss.item()
-            total_iter = current_epoch * len(self.train_loader) + i
+
             trained_time_past_all = tbar.format_dict['elapsed']
             single_iter_second = trained_time_past_all / (total_iter + 1 - start_epoch * len(self.train_loader))
             remaining_second_all = single_iter_second * (self.total_epochs * len(self.train_loader) - total_iter - 1)

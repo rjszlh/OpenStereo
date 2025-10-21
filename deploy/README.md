@@ -65,6 +65,11 @@ Or build using the downloaded TensorRT tar package:
 cmake -DTENSORRT_ROOT=<path_to_tensorrt> .. && make
 ```
 
+Remember specify your CUDA architecture
+```bash
+cmake -DTENSORRT_ROOT=<path_to_tensorrt> -DCMAKE_CUDA_ARCHITECTURES=<your_cuda_architecture> .. && make
+```
+
 Then, you can perform inference with the following command:
 
 ```bash

@@ -1,3 +1,4 @@
+# Single-GPU training
 DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: SceneFlowDataset
@@ -6,7 +7,6 @@ DATA_CONFIG:
                 EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
                 TESTING: ./data/SceneFlow/sceneflow_finalpass_test.txt
             }
-            DATA_PATH: /yourpath/SceneFlow
             RETURN_RIGHT_DISP: false
 
     DATA_TRANSFORM:

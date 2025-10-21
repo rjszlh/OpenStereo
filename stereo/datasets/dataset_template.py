@@ -22,14 +22,21 @@ class DatasetTemplate(torch_data.Dataset):
         self.mode = mode
         self.root = self.data_info.DATA_PATH
 
-        self.split_file = self.data_info.DATA_SPLIT[self.mode.upper()]
+        if self.mode.upper() in self.data_info.DATA_SPLIT:
+            self.split_file = self.data_info.DATA_SPLIT[self.mode.upper()]
+            transform_config = self.data_cfg.DATA_TRANSFORM[self.mode.upper()]
+            self.transform = build_transform_by_cfg(transform_config)
+        else:
+            self.split_file = ''
+            self.transform = None
+
         self.data_list = []
         if os.path.exists(self.split_file):
             with open(self.split_file, 'r') as fp:
                 self.data_list.extend([x.strip().split(' ') for x in fp.readlines()])
-
-        transform_config = self.data_cfg.DATA_TRANSFORM[self.mode.upper()]
-        self.transform = build_transform_by_cfg(transform_config)
+        else:
+            if len(self.split_file) != 0:
+                raise FileNotFoundError("[Errno 2] No such file or directory:" + self.split_file + ", You must modify the txt path in the yaml to your own.")
 
     def __len__(self):
         return len(self.data_list)

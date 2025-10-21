@@ -188,7 +188,7 @@ def create_backbone(model_type, norm_fn, out_channels, drop_path):
         backbone = SwinAdaptor(out_channels=out_channels, drop_path_rate=drop_path)
         pretrained = True
         if pretrained:
-            weight_url = '/mnt/nas/algorithm/chenming.zhang/github/NMRF/swin_tiny_patch4_window7_224.pth'
+            weight_url = '/file_system/vepfs/algorithm/chenming.zhang/code/LightStereoX/ckpt/swin_tiny_patch4_window7_224.pth'
             if weight_url:
                 weight = torch.load(weight_url, map_location="cpu")
                 weight = checkpoint_filter_fn(weight)

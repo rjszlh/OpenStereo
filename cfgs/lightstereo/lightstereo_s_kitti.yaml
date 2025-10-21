@@ -6,16 +6,14 @@ DATA_CONFIG:
                 EVALUATING: '',
                 TESTING: ''
             }
-            DATA_PATH: /home/hello/datasets/kitti12
             RETURN_RIGHT_DISP: true
 
         -   DATASET: KittiDataset
             DATA_SPLIT: {
-                TRAINING: ./data/KITTI5/kitti15_train200.txt,
+                TRAINING: ./data/KITTI15/kitti15_train200.txt,
                 EVALUATING: ./data/KITTI15/kitti15_val20.txt,
                 TESTING: ./data/KITTI15/kitti15_test.txt
             }
-            DATA_PATH: /home/hello/datasets/kitti15
             RETURN_RIGHT_DISP: true
 
     DATA_TRANSFORM:
