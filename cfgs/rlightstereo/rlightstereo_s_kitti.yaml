@@ -39,14 +39,14 @@ MODEL:
     LEFT_ATT: true
     FIND_UNUSED_PARAMETERS: false
     CKPT: -1
-    PRETRAINED_MODEL: '/home/hello/OpenStereo/trained/LightStereo-S-KITTI.ckpt'
+    PRETRAINED_MODEL: ''
 
 OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
     AMP: false
     BATCH_SIZE_PER_GPU: 2
-    NUM_EPOCHS: 500
+    NUM_EPOCHS: 50
 
     OPTIMIZER:
         NAME: AdamW
