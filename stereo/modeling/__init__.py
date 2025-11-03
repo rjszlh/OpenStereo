@@ -12,6 +12,7 @@ from .models.msnet.trainer import Trainer as MSNetTrainer
 from .models.psmnet.trainer import Trainer as PSMNetTrainer
 from .models.sttr.trainer import Trainer as STTRTrainer
 from .models.lightstereo.trainer import Trainer as LightStereoTrainer
+from .models.rlightstereo.trainer import Trainer as RLightStereoTrainer
 from .models.stereobase.trainer import Trainer as StereoBaseGRUTrainer
 # from .models.iinet.trainer import Trainer as IINetTrainer
 
@@ -43,6 +44,7 @@ __all__ = {
     'CasGwcNet': CasStereoTrainer,
     'CasPSMNet': CasStereoTrainer,
     'LightStereo': LightStereoTrainer,
+    'RLightStereo': RLightStereoTrainer,
     'StereoBaseGRU': StereoBaseGRUTrainer,
     'FoundationStereo': FoundationStereoTrainer,
     # 'IInet': IINetTrainer,
