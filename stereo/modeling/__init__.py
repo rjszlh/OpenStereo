@@ -17,11 +17,11 @@ from .models.stereobase.trainer import Trainer as StereoBaseGRUTrainer
 # from .models.iinet.trainer import Trainer as IINetTrainer
 
 
-try:
-# 'If you want to train/eval NMRF-Stereo, please refer to docs/prepare_foundationstereo.md
-    from .models.foundationstereo.trainer import Trainer as FoundationStereoTrainer
-except:
-    raise ValueError('If you want to train/eval NMRF-Stereo, please refer to docs/prepare_foundationstereo.md. Otherwise you can comment out this line of code')
+# try:
+# # 'If you want to train/eval NMRF-Stereo, please refer to docs/prepare_foundationstereo.md
+#     from .models.foundationstereo.trainer import Trainer as FoundationStereoTrainer
+# except:
+#     raise ValueError('If you want to train/eval NMRF-Stereo, please refer to docs/prepare_foundationstereo.md. Otherwise you can comment out this line of code')
 
 
 # If you want to train/eval NMRF-Stereo, you need to build deformable attention and superpixel-guided disparity downsample operator: 'cd stereo/modeling/models/nmrf/ops && sh make.sh && cd ..'
@@ -46,7 +46,7 @@ __all__ = {
     'LightStereo': LightStereoTrainer,
     'RLightStereo': RLightStereoTrainer,
     'StereoBaseGRU': StereoBaseGRUTrainer,
-    'FoundationStereo': FoundationStereoTrainer,
+    # 'FoundationStereo': FoundationStereoTrainer,
     # 'IInet': IINetTrainer,
     # 'NMRF': NMRFTrainer
 }
