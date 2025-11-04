@@ -16,7 +16,7 @@ class RLightStereo(nn.Module):
         self.left_att = cfgs.LEFT_ATT
 
         # backbobe
-        self.backbone = Backbone(cfgs.get('BACKCONE', 'MobileNetv2'))
+        self.backbone = Backbone(cfgs.get('BACKCONE', 'GhostNet'))
 
         # aggregation
         self.cost_agg = Aggregation(in_channels=48,

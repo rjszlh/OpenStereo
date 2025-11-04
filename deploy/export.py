@@ -54,6 +54,7 @@ from stereo.modeling.models.cfnet.cfnet import CFNet
 from stereo.modeling.models.casnet.cas_gwc import GwcNet as CasGwcNet
 from stereo.modeling.models.casnet.cas_psm import PSMNet as CasPSMNet
 from stereo.modeling.models.lightstereo.lightstereo import LightStereo as LightStereo
+from stereo.modeling.models.rlightstereo.rlightstereo import RLightStereo as RLightStereo
 
 
 __net__ = {
@@ -69,7 +70,8 @@ __net__ = {
     'CFNet': CFNet,
     'CasGwcNet': CasGwcNet,
     'CasPSMNet': CasPSMNet,
-    'LightStereo': LightStereo
+    'LightStereo': LightStereo,
+    'RLightStereo': RLightStereo,
 }
 
 # logger
