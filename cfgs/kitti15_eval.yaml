@@ -3,6 +3,7 @@ DATA_CONFIG:
         -   DATASET: KittiDataset
             DATA_SPLIT: {
                 EVALUATING: ./data/KITTI15/kitti15_train200.txt,
+                # EVALUATING: ./data/KITTI15/kitti15_val20.txt,
                 TESTING: ./data/KITTI15/kitti15_test.txt
             }
             RETURN_RIGHT_DISP: false
