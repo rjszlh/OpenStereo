@@ -36,6 +36,15 @@ def parse_config():
 @torch.no_grad()
 def main():
     args, cfgs = parse_config()
+    # set default save path if not provided
+    if args.savename is None:
+        from pathlib import Path
+        from datetime import datetime
+        left_stem = Path(args.left_img_path).stem if args.left_img_path else 'result'
+        current_date = datetime.now().strftime("%Y%m%d")
+        out_dir = Path('output')
+        out_dir.mkdir(parents=True, exist_ok=True)
+        args.savename = str(out_dir / f"{current_date}_{left_stem}_disp.png")
     if args.dist_mode:
         dist.init_process_group(backend='nccl')
         local_rank = int(os.environ["LOCAL_RANK"])
