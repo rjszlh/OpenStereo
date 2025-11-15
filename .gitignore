@@ -10,3 +10,6 @@ cfgs/foundationstereo/fstereo_*.yaml
 cfgs/foundationstereo/fstereo_combine.yaml
 
 testpic/
+
+
+pic/

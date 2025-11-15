@@ -42,7 +42,7 @@ OPTIMIZATION:
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 0.0024
+        LR: &lr 0.0002
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 

@@ -27,8 +27,8 @@ MODEL:
     AGGREGATION_BLOCKS: [1, 2, 4]
     LEFT_ATT: true
     FIND_UNUSED_PARAMETERS: false
-    CKPT: -1
-    PRETRAINED_MODEL: '/home/hello/OpenStereo/trained/LightStereo-S-SceneFlow.ckpt'
+    CKPT: 1
+    PRETRAINED_MODEL: 'output/SceneFlowDataset/RLightStereo/rlightstereo_s_sceneflow/20251114-1/ckpt/checkpoint_epoch_1.pth'
 
 OPTIMIZATION:
     FREEZE_BN: false
@@ -39,7 +39,7 @@ OPTIMIZATION:
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 0.0024
+        LR: &lr 0.0002
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 

@@ -1,10 +1,10 @@
 # @Time    : 2024/4/1 13:41
 # @Author  : zhangchenming
 DATA_PATH_DICT = {
-    'SceneFlowDataset': '/file_system/vepfs/public_data/SceneFlow',
+    'SceneFlowDataset': '/home/wuyou/data/SceneFlow',
     'FlyingThings3DSubsetDataset': '/mnt/nas/algorithm/chenming.zhang/dataset/SceneFlow',
-    'KittiDataset12': '/home/hello/datasets/kitti12',
-    'KittiDataset15': '/home/hello/datasets/kitti15',
+    'KittiDataset12': '/home/wuyou/data/kitti12',
+    'KittiDataset15': '/home/wuyou/data/kitti15',
     'DrivingDataset': '/mnt/nas/algorithm/chenming.zhang/dataset/DrivingStereo',
     'MiddleburyDataset': '/file_system/vepfs/public_data/stereo/Middlebury/',
     'ETH3DDataset': '/file_system/vepfs/public_data/stereo/eth3d',
