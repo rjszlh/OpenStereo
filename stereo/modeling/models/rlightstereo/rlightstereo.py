@@ -7,6 +7,7 @@ from stereo.modeling.disp_refinement.disp_refinement import context_upsample
 
 from .backbone import Backbone, FPNLayer
 from .aggregation import Aggregation
+from .ghost_aggregation import GhostAggregation
 
 
 class RLightStereo(nn.Module):
@@ -15,15 +16,23 @@ class RLightStereo(nn.Module):
         self.max_disp = cfgs.MAX_DISP
         self.left_att = cfgs.LEFT_ATT
 
-        # backbobe
+        # backbone
         self.backbone = Backbone(cfgs.get('BACKCONE', 'GhostNet'))
 
         # aggregation
-        self.cost_agg = Aggregation(in_channels=48,
-                                    left_att=self.left_att,
-                                    blocks=cfgs.AGGREGATION_BLOCKS,
-                                    expanse_ratio=cfgs.EXPANSE_RATIO,
-                                    backbone_channels=self.backbone.output_channels)
+        agg_type = cfgs.get('AGGREGATION_TYPE', 'Ghost')
+        if agg_type == 'Ghost':
+            agg_cls = GhostAggregation
+        else:
+            agg_cls = Aggregation
+
+        self.cost_agg = agg_cls(
+            in_channels=48,
+            left_att=self.left_att,
+            blocks=cfgs.AGGREGATION_BLOCKS,
+            expanse_ratio=cfgs.EXPANSE_RATIO,
+            backbone_channels=self.backbone.output_channels,
+        )
 
         # disp refine
         self.refine_1 = nn.Sequential(

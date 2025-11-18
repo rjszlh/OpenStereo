@@ -35,6 +35,7 @@ MODEL:
     NAME: RLightStereo
     MAX_DISP: 192
     EXPANSE_RATIO: 4
+    AGGREGATION_TYPE: Ghost
     AGGREGATION_BLOCKS: [ 1, 2, 4 ]
     LEFT_ATT: true
     FIND_UNUSED_PARAMETERS: false
