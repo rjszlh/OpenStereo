@@ -25,7 +25,7 @@ def parse_config():
                         help='device to run on, e.g. cuda:0')
     parser.add_argument('--warmup_iters', type=int, default=10,
                         help='number of warmup iterations')
-    parser.add_argument('--iters', type=int, default=100,
+    parser.add_argument('--iters', type=int, default=500,
                         help='number of timed iterations')
 
     args = parser.parse_args()

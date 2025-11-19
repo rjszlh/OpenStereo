@@ -78,11 +78,13 @@ class TrainerTemplate:
     def build_model(self, model):
         if self.cfgs.OPTIMIZATION.get('FREEZE_BN', False):
             model = common_utils.freeze_bn(model)
-            self.logger.info('Freeze the batch normalization layers')
+            if self.logger is not None:
+                self.logger.info('Freeze the batch normalization layers')
 
         if self.cfgs.OPTIMIZATION.SYNC_BN and self.args.dist_mode:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-            self.logger.info('Convert batch norm to sync batch norm')
+            if self.logger is not None:
+                self.logger.info('Convert batch norm to sync batch norm')
         model = model.to(self.local_rank)
 
         if self.args.dist_mode:
@@ -92,7 +94,8 @@ class TrainerTemplate:
 
         # load pretrained model
         if self.cfgs.MODEL.PRETRAINED_MODEL:
-            self.logger.info('Loading parameters from checkpoint %s' % self.cfgs.MODEL.PRETRAINED_MODEL)
+            if self.logger is not None:
+                self.logger.info('Loading parameters from checkpoint %s' % self.cfgs.MODEL.PRETRAINED_MODEL)
             if not os.path.isfile(self.cfgs.MODEL.PRETRAINED_MODEL):
                 raise FileNotFoundError
             common_utils.load_params_from_file(

@@ -29,30 +29,57 @@ class FPNLayer(nn.Module):
 class Backbone(nn.Module):
     def __init__(self, backbone='GhostNet'):
         super().__init__()
-        if backbone != 'GhostNet':
-            raise ValueError(f"Unsupported backbone '{backbone}'. Only GhostNet is available in rlightstereo.")
+        if backbone == 'GhostNet':
+            model = timm.create_model('ghostnet_100', pretrained=True, features_only=True)
 
-        model = timm.create_model('ghostnet_100', pretrained=True, features_only=True)
+            # GhostNet exposes four pyramid stages whose channel widths are fixed:
+            #   1/4 ->  24 channels (blocks_1)
+            #   1/8 ->  40 channels (blocks_3)
+            #   1/16 -> 80 channels (blocks_5)
+            #   1/32 -> 160 channels (blocks_7)
+            channels = [160, 80, 40, 24]
 
-        # GhostNet exposes four pyramid stages whose channel widths are fixed:
-        #   1/4 ->  24 channels (blocks_1)
-        #   1/8 ->  40 channels (blocks_3)
-        #   1/16 -> 80 channels (blocks_5)
-        #   1/32 -> 160 channels (blocks_7)
-        channels = [160, 80, 40, 24]
+            self.conv_stem = model.conv_stem
+            self.bn1 = model.bn1
+            self.act1 = model.act1
 
-        self.conv_stem = model.conv_stem
-        self.bn1 = model.bn1
-        self.act1 = model.act1
+            self.block0 = model.blocks_0
+            self.block1 = model.blocks_1
+            # blocks_2 maintains 1/4 resolution while blocks_3 downsamples to 1/8.
+            self.block2 = nn.Sequential(model.blocks_2, model.blocks_3)
+            # blocks_4 keeps 1/8 resolution and blocks_5 produces the 1/16 output.
+            self.block3 = nn.Sequential(model.blocks_4, model.blocks_5)
+            # The final 1/32 tensor is emitted after blocks_6 and blocks_7.
+            self.block4 = nn.Sequential(model.blocks_6, model.blocks_7)
 
-        self.block0 = model.blocks_0
-        self.block1 = model.blocks_1
-        # blocks_2 maintains 1/4 resolution while blocks_3 downsamples to 1/8.
-        self.block2 = nn.Sequential(model.blocks_2, model.blocks_3)
-        # blocks_4 keeps 1/8 resolution and blocks_5 produces the 1/16 output.
-        self.block3 = nn.Sequential(model.blocks_4, model.blocks_5)
-        # The final 1/32 tensor is emitted after blocks_6 and blocks_7.
-        self.block4 = nn.Sequential(model.blocks_6, model.blocks_7)
+        elif backbone == 'MobileNetv2':
+            model = timm.create_model('mobilenetv2_100', pretrained=True, features_only=True)
+            channels = [160, 96, 32, 24]
+
+            self.conv_stem = model.conv_stem
+            self.bn1 = model.bn1
+            self.act1 = model.act1
+            self.block0 = model.blocks[0]
+            self.block1 = model.blocks[1]
+            self.block2 = model.blocks[2]
+            self.block3 = model.blocks[3:5]
+            self.block4 = model.blocks[5]
+
+        elif backbone == 'EfficientNetv2':
+            model = timm.create_model('efficientnetv2_rw_s', pretrained=True, features_only=True)
+            channels = [272, 160, 64, 48]
+
+            self.conv_stem = model.conv_stem
+            self.bn1 = model.bn1
+            self.act1 = model.act1
+            self.block0 = model.blocks[0]
+            self.block1 = model.blocks[1]
+            self.block2 = model.blocks[2]
+            self.block3 = model.blocks[3:5]
+            self.block4 = model.blocks[5]
+
+        else:
+            raise NotImplementedError(f"Unsupported backbone '{backbone}' for rlightstereo.")
 
         self.fpn_layer4 = FPNLayer(channels[0], channels[1])
         self.fpn_layer3 = FPNLayer(channels[1], channels[2])
