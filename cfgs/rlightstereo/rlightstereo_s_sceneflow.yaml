@@ -24,11 +24,13 @@ MODEL:
     NAME: RLightStereo
     MAX_DISP: 192
     EXPANSE_RATIO: 4
+    BACKCONE: MobileNetv2
+    AGGREGATION_TYPE: ACIR
     AGGREGATION_BLOCKS: [1, 2, 4]
     LEFT_ATT: true
     FIND_UNUSED_PARAMETERS: false
-    CKPT: 1
-    PRETRAINED_MODEL: 'output/SceneFlowDataset/RLightStereo/rlightstereo_s_sceneflow/20251114-1/ckpt/checkpoint_epoch_1.pth'
+    CKPT: -1
+    PRETRAINED_MODEL: ''
 
 OPTIMIZATION:
     FREEZE_BN: false
@@ -39,7 +41,7 @@ OPTIMIZATION:
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 0.0002
+        LR: &lr 0.0003
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 

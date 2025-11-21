@@ -3,6 +3,7 @@ import argparse
 import time
 
 import torch
+import torch.nn as nn
 from easydict import EasyDict
 
 sys.path.insert(0, './')
@@ -25,7 +26,7 @@ def parse_config():
                         help='device to run on, e.g. cuda:0')
     parser.add_argument('--warmup_iters', type=int, default=10,
                         help='number of warmup iterations')
-    parser.add_argument('--iters', type=int, default=500,
+    parser.add_argument('--iters', type=int, default=1000,
                         help='number of timed iterations')
 
     args = parser.parse_args()
@@ -70,6 +71,22 @@ def main():
     logger.info('Building model and loading weights...')
     trainer = build_trainer(args, cfgs, local_rank, global_rank, logger, tb_writer=None)
     model = trainer.model
+
+    # For RLightStereo with ACIR aggregation, optionally re-parameterize
+    # ACIR blocks into their deploy form before benchmarking.
+    # if getattr(cfgs, 'MODEL', None) is not None \
+    #         and cfgs.MODEL.get('NAME', None) == 'RLightStereo' \
+    #         and cfgs.MODEL.get('AGGREGATION_TYPE', None) == 'ACIR':
+    #     from stereo.modeling.models.rlightstereo.acir_block import ACIRBlockECA
+    #
+    #     base_model = model.module if isinstance(model, nn.parallel.DistributedDataParallel) else model
+    #     num_blocks = 0
+    #     for m in base_model.modules():
+    #         if isinstance(m, ACIRBlockECA):
+    #             m.switch_to_deploy()
+    #             num_blocks += 1
+    #     logger.info(f'Switched {num_blocks} ACIRBlockECA modules to deploy mode for benchmarking.')
+
     model.eval()
 
     h, w = args.height, args.width
@@ -114,4 +131,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

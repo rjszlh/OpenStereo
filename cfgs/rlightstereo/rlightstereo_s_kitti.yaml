@@ -35,12 +35,13 @@ MODEL:
     NAME: RLightStereo
     MAX_DISP: 192
     EXPANSE_RATIO: 4
-    AGGREGATION_TYPE: Ghost
+    BACKCONE: MobileNetv2
+    AGGREGATION_TYPE: 1
     AGGREGATION_BLOCKS: [ 1, 2, 4 ]
     LEFT_ATT: true
     FIND_UNUSED_PARAMETERS: false
     CKPT: -1
-    PRETRAINED_MODEL: '/home/wuyou/OpenStereo/output/SceneFlowDataset/RLightStereo/rlightstereo_s_sceneflow_general/2025113-1/ckpt/checkpoint_epoch_89.pth'
+    PRETRAINED_MODEL: ''
 
 OPTIMIZATION:
     FREEZE_BN: false

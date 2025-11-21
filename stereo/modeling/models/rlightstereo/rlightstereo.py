@@ -7,7 +7,10 @@ from stereo.modeling.disp_refinement.disp_refinement import context_upsample
 
 from .backbone import Backbone, FPNLayer
 from .aggregation import Aggregation
+from .aggregation_acir import AggregationACIR
 from .ghost_aggregation import GhostAggregation
+from .shuffle_aggregation import ShuffleAggregation
+from .residual_att_aggregation import ResidualAttAggregation
 
 
 class RLightStereo(nn.Module):
@@ -23,6 +26,12 @@ class RLightStereo(nn.Module):
         agg_type = cfgs.get('AGGREGATION_TYPE', 'Ghost')
         if agg_type == 'Ghost':
             agg_cls = GhostAggregation
+        elif agg_type == 'Shuffle':
+            agg_cls = ShuffleAggregation
+        elif agg_type == 'ACIR':
+            agg_cls = AggregationACIR
+        elif agg_type == 'ResidualAtt':
+            agg_cls = ResidualAttAggregation
         else:
             agg_cls = Aggregation
 
