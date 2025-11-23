@@ -10,7 +10,9 @@ from .aggregation import Aggregation
 from .aggregation_acir import AggregationACIR
 from .ghost_aggregation import GhostAggregation
 from .shuffle_aggregation import ShuffleAggregation
-from .residual_att_aggregation import ResidualAttAggregation
+from .aggregation_multi_att import AggregationMultiAtt
+from .aggregation_dual import DualBranchAggregation
+
 
 
 class RLightStereo(nn.Module):
@@ -30,8 +32,10 @@ class RLightStereo(nn.Module):
             agg_cls = ShuffleAggregation
         elif agg_type == 'ACIR':
             agg_cls = AggregationACIR
-        elif agg_type == 'ResidualAtt':
-            agg_cls = ResidualAttAggregation
+        elif agg_type == 'MultiAtt':
+            agg_cls = AggregationMultiAtt
+        elif agg_type == 'Dual':
+            agg_cls = DualBranchAggregation
         else:
             agg_cls = Aggregation
 

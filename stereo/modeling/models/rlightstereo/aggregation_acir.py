@@ -12,7 +12,7 @@ class AggregationACIR(nn.Module):
     """
 
     def __init__(self, in_channels, left_att, blocks, expanse_ratio, backbone_channels,
-                 use_eca=True):
+                 use_eca=False):
         super().__init__()
 
         self.left_att = left_att

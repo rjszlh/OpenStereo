@@ -49,7 +49,7 @@ def measure(model, shape):
 @torch.no_grad()
 def infer_time(model, shape):
     model.eval()
-    repetitions = 100
+    repetitions = 500
 
     inputs = {'left': torch.randn(shape).cuda(),
               'right': torch.randn(shape).cuda()}
@@ -86,7 +86,7 @@ def infer_time(model, shape):
 
     # avg = timings.sum() / repetitions
     # print('\navg_time=%.3fms\n' % avg)
-    print(all_time / repetitions * 1000)
+    print('\navg_time=%.3fms\n' % (all_time / repetitions * 1000))
 
 
 if __name__ == '__main__':
