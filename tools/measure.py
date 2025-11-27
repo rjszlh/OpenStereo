@@ -1,10 +1,12 @@
 # @Time    : 2024/3/1 11:17
 # @Author  : zhangchenming
-import time
-import torch
 import argparse
 import sys
+import time
+from collections import defaultdict
+
 import thop
+import torch
 from easydict import EasyDict
 from tqdm import tqdm
 
@@ -17,6 +19,10 @@ def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--dist_mode', action='store_true', default=False, help='torchrun ddp multi gpu')
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config for training')
+    parser.add_argument('--repetitions', type=int, default=500, help='iterations for avg inference time')
+    parser.add_argument('--module_time', action='store_true', help='report per-module inference time')
+    parser.add_argument('--module_repetitions', type=int, default=50, help='iterations for per-module breakdown')
+    parser.add_argument('--module_prefix', type=str, default=None, help='only show aggregated time for top-level module prefix (e.g. backbone)')
 
     args = parser.parse_args()
     yaml_config = common_utils.config_loader(args.cfg_file)
@@ -30,8 +36,10 @@ def main():
     model = build_trainer(args, cfgs, local_rank=0, global_rank=0, logger=None, tb_writer=None).model
 
     shape = [1, 3, 544, 960]
-    infer_time(model, shape)
+    infer_time(model, shape, repetitions=args.repetitions)
     measure(model, shape)
+    if args.module_time:
+        measure_module_time(model, shape, repetitions=args.module_repetitions, module_prefix=args.module_prefix)
 
 
 @torch.no_grad()
@@ -47,9 +55,8 @@ def measure(model, shape):
 
 
 @torch.no_grad()
-def infer_time(model, shape):
+def infer_time(model, shape, repetitions):
     model.eval()
-    repetitions = 500
 
     inputs = {'left': torch.randn(shape).cuda(),
               'right': torch.randn(shape).cuda()}
@@ -87,6 +94,79 @@ def infer_time(model, shape):
     # avg = timings.sum() / repetitions
     # print('\navg_time=%.3fms\n' % avg)
     print('\navg_time=%.3fms\n' % (all_time / repetitions * 1000))
+
+
+@torch.no_grad()
+def measure_module_time(model, shape, repetitions=50, module_prefix=None):
+    """
+    粗粒度统计每个叶子模块的平均耗时，可选按顶层前缀聚合，按单次前向总耗时排序。
+    """
+    model.eval()
+    inputs = {'left': torch.randn(shape).cuda(),
+              'right': torch.randn(shape).cuda()}
+
+    module_time = defaultdict(float)
+    module_calls = defaultdict(int)
+    module_starts = {}
+    handles = []
+
+    def is_leaf(module):
+        return len(list(module.children())) == 0
+
+    def pre_hook(name):
+        def hook(module, inputs):
+            torch.cuda.synchronize()
+            module_starts[name] = time.perf_counter()
+        return hook
+
+    def post_hook(name):
+        def hook(module, inputs, output):
+            torch.cuda.synchronize()
+            elapsed = time.perf_counter() - module_starts.pop(name, 0.0)
+            module_time[name] += elapsed
+            module_calls[name] += 1
+        return hook
+
+    for name, module in model.named_modules():
+        if is_leaf(module):
+            handles.append(module.register_forward_pre_hook(pre_hook(name)))
+            handles.append(module.register_forward_hook(post_hook(name)))
+
+    # 预热
+    with torch.no_grad():
+        for _ in range(5):
+            _ = model(inputs)
+
+    print('module time testing ...\n')
+    with torch.no_grad():
+        for _ in tqdm(range(repetitions)):
+            _ = model(inputs)
+
+    for handle in handles:
+        handle.remove()
+
+    print('\nmodule avg time per forward (sorted by total per iteration):')
+    grouped_time = defaultdict(float)
+    grouped_calls = defaultdict(int)
+    for name in module_time:
+        top = name.split('.')[0] if '.' in name else name
+        grouped_time[top] += module_time[name]
+        grouped_calls[top] += module_calls[name]
+
+    def emit(name, total, calls):
+        total_ms = total / repetitions * 1000
+        per_call_ms = total / calls * 1000 if calls else 0.0
+        calls_per_iter = calls / repetitions
+        print(f'{name:60s} total/iter: {total_ms:8.3f} ms | per_call: {per_call_ms:8.3f} ms | calls/iter: {calls_per_iter:5.1f}')
+
+    if module_prefix:
+        if module_prefix not in grouped_time:
+            print(f'prefix "{module_prefix}" not found in module names')
+        else:
+            emit(module_prefix, grouped_time[module_prefix], grouped_calls[module_prefix])
+    else:
+        for name in sorted(grouped_time, key=lambda k: grouped_time[k], reverse=True):
+            emit(name, grouped_time[name], grouped_calls[name])
 
 
 if __name__ == '__main__':
