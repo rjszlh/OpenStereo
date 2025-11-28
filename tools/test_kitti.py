@@ -13,6 +13,7 @@ from easydict import EasyDict
 from pathlib import Path
 
 sys.path.insert(0, './')
+from cfgs.data_basic import DATA_PATH_DICT
 from stereo.utils import common_utils
 from stereo.datasets.dataset_template import DatasetTemplate
 from stereo.modeling import build_trainer
@@ -20,6 +21,15 @@ from stereo.utils.common_utils import load_params_from_file
 
 
 def parse_config():
+    def fill_data_path(data_cfg):
+        for each in data_cfg.DATA_CONFIG.DATA_INFOS:
+            dataset_name = each.DATASET
+            if dataset_name == 'KittiDataset':
+                split_hint = ' '.join(each.DATA_SPLIT.values()).lower()
+                dataset_name = 'KittiDataset15' if 'kitti15' in split_hint else 'KittiDataset12'
+            each.DATA_PATH = DATA_PATH_DICT[dataset_name]
+            assert os.path.exists(each.DATA_PATH), '[Errno 2] No such file or directory: {}, You must modify the data root path in cfgs/databasic.py to the path of your own dataset.'.format(each.DATA_PATH)
+
     parser = argparse.ArgumentParser(description='arg parser')
 
     parser.add_argument('--workers', type=int, default=0, help='number of workers for dataloader')
@@ -29,6 +39,9 @@ def parse_config():
     parser.add_argument('--data_cfg_file', type=str, default='cfgs/kitti_eval_test.yaml')
 
     args = parser.parse_args()
+    # align with trainer expectations
+    args.dist_mode = False
+    args.run_mode = 'test'
     args.output_dir = str(Path(args.pretrained_model).parent.parent)
     args.kitti_result_dir = os.path.join(args.output_dir, 'disp_0')
     if not os.path.exists(args.kitti_result_dir):
@@ -38,7 +51,13 @@ def parse_config():
     yaml_config = common_utils.config_loader(args.cfg_file)
     cfgs = EasyDict(yaml_config)
 
-    return args, cfgs
+    # fill data path like tools/eval.py/train.py
+    fill_data_path(cfgs)
+    data_yaml_config = common_utils.config_loader(args.data_cfg_file)
+    data_cfgs = EasyDict(data_yaml_config)
+    fill_data_path(data_cfgs)
+
+    return args, cfgs, data_cfgs
 
 
 class KittiTestDataset(DatasetTemplate):
@@ -62,7 +81,7 @@ class KittiTestDataset(DatasetTemplate):
 
 @torch.no_grad()
 def main():
-    args, cfgs = parse_config()
+    args, cfgs, data_cfgs = parse_config()
     local_rank = 0
     global_rank = 0
     torch.cuda.set_device(local_rank)
@@ -76,8 +95,6 @@ def main():
         logger.info('{:16} {}'.format(key, val))
     common_utils.log_configs(cfgs, logger=logger)
 
-    data_yaml_config = common_utils.config_loader(args.data_cfg_file)
-    data_cfgs = EasyDict(data_yaml_config)
     logger.info('')
     logger.info('~~~~~~~~~~~~~~~~~~~~ EVAL DATASET INFO ~~~~~~~~~~~~~~~~~~~~')
     common_utils.log_configs(data_cfgs.DATA_CONFIG, logger=logger)

@@ -6,12 +6,17 @@ from stereo.modeling.disp_pred.disp_regression import disparity_regression
 from stereo.modeling.disp_refinement.disp_refinement import context_upsample
 
 from .backbone import Backbone, FPNLayer
+from .backbone_bifpn import BiFPNBackbone
 from .aggregation import Aggregation
 from .aggregation_acir import AggregationACIR
 from .ghost_aggregation import GhostAggregation
 from .shuffle_aggregation import ShuffleAggregation
 from .aggregation_multi_att import AggregationMultiAtt
 from .aggregation_dual import DualBranchAggregation
+from .aggregation_dual_att import DualAttentionAggregation
+from .aggregation_edge_diffusion import EdgeDiffusionAggregation
+from .disparity_sav import DisparitySpectralSelfAttentionVolume
+from .convnext_aggregation import ConvNeXtAggregation
 
 
 
@@ -22,7 +27,12 @@ class RLightStereo(nn.Module):
         self.left_att = cfgs.LEFT_ATT
 
         # backbone
-        self.backbone = Backbone(cfgs.get('BACKCONE', 'GhostNet'))
+        backbone_type = cfgs.get('BACKCONE', 'GhostNet')
+        bifpn_layers = cfgs.get('BIFPN_LAYERS', 1)
+        if backbone_type == 'MobileNetv2_BiFPN':
+            self.backbone = BiFPNBackbone(bifpn_layers=bifpn_layers)
+        else:
+            self.backbone = Backbone(backbone_type)
 
         # aggregation
         agg_type = cfgs.get('AGGREGATION_TYPE', 'Ghost')
@@ -36,11 +46,31 @@ class RLightStereo(nn.Module):
             agg_cls = AggregationMultiAtt
         elif agg_type == 'Dual':
             agg_cls = DualBranchAggregation
+        elif agg_type == 'DualAtt':
+            agg_cls = DualAttentionAggregation
+        elif agg_type == 'EdgeDiffusion':
+            agg_cls = EdgeDiffusionAggregation
+        elif agg_type == 'ConvNeXt':
+            agg_cls = ConvNeXtAggregation
         else:
             agg_cls = Aggregation
 
+        ds_sav_cfg = cfgs.get('DS_SAV', None)
+        self.ds_sav = None
+        if ds_sav_cfg not in (None, False):
+            ds_sav_cfg = ds_sav_cfg if hasattr(ds_sav_cfg, "get") else {}
+            self.ds_sav = DisparitySpectralSelfAttentionVolume(
+                disp_channels=self.max_disp // 4,
+                embed_dim=ds_sav_cfg.get('EMBED_DIM', 32),
+                num_heads=ds_sav_cfg.get('NUM_HEADS', 4),
+                ff_hidden_dim=ds_sav_cfg.get('FF_HIDDEN_DIM', None),
+                dropout=ds_sav_cfg.get('DROPOUT', 0.0),
+                use_pos_encoding=ds_sav_cfg.get('USE_POS_ENCODING', True),
+            )
+
         self.cost_agg = agg_cls(
-            in_channels=48,
+            # correlation_volume 输出通道 = max_disp//4，避免 MAX_DISP 改变后与聚合模块不匹配
+            in_channels=self.max_disp // 4,
             left_att=self.left_att,
             blocks=cfgs.AGGREGATION_BLOCKS,
             expanse_ratio=cfgs.EXPANSE_RATIO,
@@ -71,7 +101,12 @@ class RLightStereo(nn.Module):
         features_right = self.backbone(image2)
 
         gwc_volume = correlation_volume(features_left[0], features_right[0], self.max_disp // 4)
-        encoding_volume = self.cost_agg(gwc_volume, features_left)  # [bz, 1, max_disp/4, H/4, W/4]
+        if self.ds_sav is not None:
+            gwc_volume = self.ds_sav(gwc_volume)  # disparity-wise self-attention refinement
+        if getattr(self.cost_agg, "requires_right_features", False):
+            encoding_volume = self.cost_agg(gwc_volume, features_left, features_right)
+        else:
+            encoding_volume = self.cost_agg(gwc_volume, features_left)  # [bz, 1, max_disp/4, H/4, W/4]
         squeezed_encoding = encoding_volume[0].reshape(encoding_volume[0].size(0), -1, encoding_volume[0].size(2), encoding_volume[0].size(3))  # [bz, max_disp/4, H/4, W/4]
 
         prob = F.softmax(squeezed_encoding, dim=1)
