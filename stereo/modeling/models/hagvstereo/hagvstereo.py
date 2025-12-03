@@ -9,6 +9,7 @@ from stereo.modeling.disp_refinement.disp_refinement import context_upsample
 from .backbone import Backbone, FPNLayer
 from .backbone_bifpn import BiFPNBackbone
 from .aggregation import Aggregation
+from .convnext_aggregation import ConvNeXtAggregation
 
 
 class HAGVCostVolume(nn.Module):
@@ -24,8 +25,8 @@ class HAGVCostVolume(nn.Module):
         self.D = max_disp // 4
         self.D_coarse = max(self.D // coarse_scale, 1)
         self.coarse_scale = coarse_scale
-        self.gamma = gamma
-        self.sigma = sigma
+        self.gamma = nn.Parameter(torch.tensor(float(gamma)))
+        self.sigma = nn.Parameter(torch.tensor(float(sigma)))
 
         self.pool = nn.AvgPool2d(kernel_size=coarse_scale, stride=coarse_scale, padding=0)
         self.coarse_agg = agg_cls(in_channels=self.D_coarse, **agg_kwargs)
@@ -35,20 +36,22 @@ class HAGVCostVolume(nn.Module):
         disp_values = torch.arange(self.D, device=disp_coarse.device, dtype=disp_coarse.dtype)
         disp_values = disp_values.view(1, self.D, 1, 1)
 
-        sigma = max(self.sigma, 1e-3)
+        sigma = F.softplus(self.sigma) + 1e-3  # keep positive/avoid collapse
         prob = torch.exp(-0.5 * (disp_values - disp_coarse) ** 2 / (sigma ** 2))
         prob = prob / (prob.sum(dim=1, keepdim=True) + 1e-6)
 
         prob_up = F.interpolate(prob, size=up_size, mode='bilinear', align_corners=False)
         prob_mean = prob_up.mean(dim=1, keepdim=True)
-        attn = 1.0 + self.gamma * (prob_up - prob_mean)
+        gamma = F.softplus(self.gamma)
+        attn = 1.0 + gamma * (prob_up - prob_mean)
         attn = torch.clamp(attn, min=0.5, max=1.5)
         return attn
 
-    def forward(self, feat_left, feat_right, features_left=None):
+    def forward(self, fine_feat_left, fine_feat_right, coarse_feat_left=None, coarse_feat_right=None,
+                features_left=None):
         # coarse stage
-        coarse_left = self.pool(feat_left)
-        coarse_right = self.pool(feat_right)
+        coarse_left = coarse_feat_left if coarse_feat_left is not None else self.pool(fine_feat_left)
+        coarse_right = coarse_feat_right if coarse_feat_right is not None else self.pool(fine_feat_right)
 
         coarse_cost = correlation_volume(coarse_left, coarse_right, self.D_coarse)
         # reuse aggregation structure for coarse disparity estimation
@@ -58,11 +61,11 @@ class HAGVCostVolume(nn.Module):
         coarse_prob = F.softmax(coarse_logits, dim=1)
         disp_coarse = disparity_regression(coarse_prob, self.D_coarse)  # [B, 1, Hc, Wc]
 
-        attn = self._build_attention_from_disp(disp_coarse, up_size=feat_left.shape[2:])
+        attn = self._build_attention_from_disp(disp_coarse.detach(), up_size=fine_feat_left.shape[2:])
 
         # fine stage
-        fine_cost = correlation_volume(feat_left, feat_right, self.D)
-        cost_fine_hagv = fine_cost * attn
+        fine_cost = correlation_volume(fine_feat_left, fine_feat_right, self.D)
+        cost_fine_hagv = fine_cost * attn + fine_cost  # residual gating to keep original cost
 
         return cost_fine_hagv, disp_coarse
 
@@ -88,11 +91,16 @@ class HAGVstereo(nn.Module):
             self.backbone = Backbone(backbone_name)
 
         # aggregation
-        self.cost_agg = Aggregation(in_channels=self.D,
-                                    left_att=self.left_att,
-                                    blocks=cfgs.AGGREGATION_BLOCKS,
-                                    expanse_ratio=cfgs.EXPANSE_RATIO,
-                                    backbone_channels=self.backbone.output_channels)
+        agg_type = cfgs.get('AGGREGATION_TYPE', None)
+        if agg_type == 'ConvNeXt':
+            agg_cls = ConvNeXtAggregation
+        else:
+            agg_cls = Aggregation
+        self.cost_agg = agg_cls(in_channels=self.D,
+                                left_att=self.left_att,
+                                blocks=cfgs.AGGREGATION_BLOCKS,
+                                expanse_ratio=cfgs.EXPANSE_RATIO,
+                                backbone_channels=self.backbone.output_channels)
 
         if self.use_hagv:
             coarse_agg_kwargs = dict(
@@ -104,7 +112,7 @@ class HAGVstereo(nn.Module):
             self.cost_volume = HAGVCostVolume(
                 max_disp=self.max_disp,
                 in_channels=self.D,
-                agg_cls=Aggregation,
+                agg_cls=agg_cls,
                 agg_kwargs=coarse_agg_kwargs,
                 coarse_scale=self.hagv_coarse_scale,
                 gamma=self.hagv_gamma,
@@ -135,7 +143,12 @@ class HAGVstereo(nn.Module):
         features_right = self.backbone(image2)
 
         if self.use_hagv:
-            gwc_volume, disp_coarse = self.cost_volume(features_left[0], features_right[0], features_left=[])
+            gwc_volume, disp_coarse = self.cost_volume(
+                fine_feat_left=features_left[0],
+                fine_feat_right=features_right[0],
+                coarse_feat_left=features_left[1],
+                coarse_feat_right=features_right[1],
+                features_left=[])
         else:
             gwc_volume = correlation_volume(features_left[0], features_right[0], self.D)
             disp_coarse = None

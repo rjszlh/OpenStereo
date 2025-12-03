@@ -19,7 +19,7 @@ def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--dist_mode', action='store_true', default=False, help='torchrun ddp multi gpu')
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config for training')
-    parser.add_argument('--repetitions', type=int, default=500, help='iterations for avg inference time')
+    parser.add_argument('--repetitions', type=int, default=100, help='iterations for avg inference time')
     parser.add_argument('--module_time', action='store_true', help='report per-module inference time')
     parser.add_argument('--module_repetitions', type=int, default=50, help='iterations for per-module breakdown')
     parser.add_argument('--module_prefix', type=str, default=None, help='only show aggregated time for top-level module prefix (e.g. backbone)')
