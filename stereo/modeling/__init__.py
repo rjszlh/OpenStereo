@@ -14,6 +14,7 @@ from .models.sttr.trainer import Trainer as STTRTrainer
 from .models.lightstereo.trainer import Trainer as LightStereoTrainer
 from .models.rlightstereo.trainer import Trainer as RLightStereoTrainer
 from .models.stereobase.trainer import Trainer as StereoBaseGRUTrainer
+from .models.hagvstereo.trainer import Trainer as HAGVstereoTrainer
 # from .models.iinet.trainer import Trainer as IINetTrainer
 
 
@@ -46,6 +47,7 @@ __all__ = {
     'LightStereo': LightStereoTrainer,
     'RLightStereo': RLightStereoTrainer,
     'StereoBaseGRU': StereoBaseGRUTrainer,
+    'HAGVstereo': HAGVstereoTrainer,
     # 'FoundationStereo': FoundationStereoTrainer,
     # 'IInet': IINetTrainer,
     # 'NMRF': NMRFTrainer
